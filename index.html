@@ -89,6 +89,7 @@
                 <option value="spiral">Spiral</option>
                 <option value="tunnel">Tunnel</option>
                 <option value="zoom">Zoom</option>
+                <option value="sphere">Sphere</option>
             </select>
         </div>
         <div>
@@ -102,6 +103,10 @@
             <div><input type="checkbox" class="shape-checkbox" value="cone" checked><label>Cone</label></div>
             <div><input type="checkbox" class="shape-checkbox" value="cylinder" checked><label>Cylinder</label></div>
             <div><input type="checkbox" class="shape-checkbox" value="torus" checked><label>Torus</label></div>
+            <div><input type="checkbox" class="shape-checkbox" value="tetrahedron" checked><label>Tetrahedron</label></div>
+            <div><input type="checkbox" class="shape-checkbox" value="octahedron" checked><label>Octahedron</label></div>
+            <div><input type="checkbox" class="shape-checkbox" value="icosahedron" checked><label>Icosahedron</label></div>
+            <div><input type="checkbox" class="shape-checkbox" value="torusKnot" checked><label>Torus Knot</label></div>
         </div>
 
         <div class="button-group">
@@ -112,6 +117,14 @@
         <div>
             <label for="textInput">Message:</label>
             <input type="text" id="textInput" value="3D" style="flex-grow: 1;">
+        </div>
+        <div>
+            <label for="fontSelect">Font:</label>
+            <select id="fontSelect" style="flex-grow: 1;">
+                <option value="helvetiker">Helvetiker</option>
+                <option value="optimer">Optimer</option>
+                <option value="gentilis">Gentilis</option>
+            </select>
         </div>
         <div class="button-group">
             <button id="textGenerateButton">Generate Text</button>

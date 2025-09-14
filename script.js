@@ -20,6 +20,7 @@ const saveButton = document.getElementById('saveButton');
 const textInput = document.getElementById('textInput');
 const textGenerateButton = document.getElementById('textGenerateButton');
 const bgColorPicker = document.getElementById('bgColorPicker');
+const fontSelect = document.getElementById('fontSelect');
 
 const SPACE_SIZE = 20;
 const PLACEMENT_ATTEMPTS = 50;
@@ -55,11 +56,22 @@ scene.add(kaleidoscopeGroup);
 
 let font = null;
 const fontLoader = new FontLoader();
-fontLoader.load('https://unpkg.com/three@0.164.1/examples/fonts/helvetiker_regular.typeface.json', (loadedFont) => {
-    font = loadedFont;
-    textGenerateButton.disabled = false;
-});
-textGenerateButton.disabled = true;
+const fontUrls = {
+    helvetiker: 'https://unpkg.com/three@0.164.1/examples/fonts/helvetiker_regular.typeface.json',
+    optimer: 'https://unpkg.com/three@0.164.1/examples/fonts/optimer_regular.typeface.json',
+    gentilis: 'https://unpkg.com/three@0.164.1/examples/fonts/gentilis_regular.typeface.json'
+};
+
+function loadFont(name) {
+    textGenerateButton.disabled = true;
+    fontLoader.load(fontUrls[name], (loadedFont) => {
+        font = loadedFont;
+        textGenerateButton.disabled = false;
+    });
+}
+
+fontSelect.addEventListener('change', () => loadFont(fontSelect.value));
+loadFont(fontSelect.value);
 
 function getSelectedShapes() {
     const checkboxes = document.querySelectorAll('.shape-checkbox:checked');
@@ -98,16 +110,33 @@ function populateSliceWithShapes(sliceGroup, effect) {
                 radius: size * 1.5
             };
             switch (effect) {
-                case 'tunnel':
+                case 'tunnel': {
                     const angle = Math.random() * Math.PI * 2;
                     const radius = 1 + Math.random() * 4;
                     newObject.position.set(Math.cos(angle) * radius, Math.sin(angle) * radius, (Math.random() - 0.5) * SPACE_SIZE);
                     break;
-                case 'spiral':
+                }
+                case 'spiral': {
                     const spiralAngle = i * 0.4 + (Math.random() - 0.5);
                     const spiralRadius = i * 0.25;
                     newObject.position.set(Math.cos(spiralAngle) * spiralRadius, Math.sin(spiralAngle) * spiralRadius, -i * 0.4);
                     break;
+                }
+                case 'zoom': {
+                    newObject.position.set((Math.random() - 0.5) * 5, (Math.random() - 0.5) * 5, -i * 0.8);
+                    break;
+                }
+                case 'sphere': {
+                    const phi = Math.acos(2 * Math.random() - 1);
+                    const theta = Math.random() * Math.PI * 2;
+                    const r = 5;
+                    newObject.position.set(
+                        Math.sin(phi) * Math.cos(theta) * r,
+                        Math.sin(phi) * Math.sin(theta) * r,
+                        Math.cos(phi) * r
+                    );
+                    break;
+                }
                 default:
                     newObject.position.set((Math.random() - 0.5) * SPACE_SIZE, (Math.random() - 0.5) * SPACE_SIZE, (Math.random() - 0.5) * SPACE_SIZE);
             }
@@ -120,6 +149,10 @@ function populateSliceWithShapes(sliceGroup, effect) {
                 else if (type === 'cone') geometry = new THREE.ConeGeometry(size, size * 2, 32);
                 else if (type === 'cylinder') geometry = new THREE.CylinderGeometry(size * 0.7, size * 0.7, size * 1.5, 32);
                 else if (type === 'torus') geometry = new THREE.TorusGeometry(size, size * 0.4, 16, 100);
+                else if (type === 'tetrahedron') geometry = new THREE.TetrahedronGeometry(size);
+                else if (type === 'octahedron') geometry = new THREE.OctahedronGeometry(size);
+                else if (type === 'icosahedron') geometry = new THREE.IcosahedronGeometry(size);
+                else if (type === 'torusKnot') geometry = new THREE.TorusKnotGeometry(size, size * 0.3, 100, 16);
                 const material = new THREE.MeshStandardMaterial({
                     color: new THREE.Color(Math.random(), Math.random(), Math.random())
                 });
@@ -170,16 +203,33 @@ function createKaleidoscopeFromText(text, numReflections, effect) {
                 radius: wordObject.boundingSphere.radius
             };
             switch (effect) {
-                case 'tunnel':
+                case 'tunnel': {
                     const angle = Math.random() * Math.PI * 2;
                     const radius = 1 + Math.random() * 4;
                     newObjectData.position.set(Math.cos(angle) * radius, Math.sin(angle) * radius, (Math.random() - 0.5) * SPACE_SIZE);
                     break;
-                case 'spiral':
+                }
+                case 'spiral': {
                     const spiralAngle = i * 0.8 + (Math.random() - 0.5);
                     const spiralRadius = i * 0.8;
                     newObjectData.position.set(Math.cos(spiralAngle) * spiralRadius, Math.sin(spiralAngle) * spiralRadius, -i);
                     break;
+                }
+                case 'zoom': {
+                    newObjectData.position.set((Math.random() - 0.5) * 5, (Math.random() - 0.5) * 5, -i * 2);
+                    break;
+                }
+                case 'sphere': {
+                    const phi = Math.acos(2 * Math.random() - 1);
+                    const theta = Math.random() * Math.PI * 2;
+                    const r = 5;
+                    newObjectData.position.set(
+                        Math.sin(phi) * Math.cos(theta) * r,
+                        Math.sin(phi) * Math.sin(theta) * r,
+                        Math.cos(phi) * r
+                    );
+                    break;
+                }
                 default:
                     newObjectData.position.set((Math.random() - 0.5) * SPACE_SIZE, (Math.random() - 0.5) * SPACE_SIZE, (Math.random() - 0.5) * SPACE_SIZE);
             }
