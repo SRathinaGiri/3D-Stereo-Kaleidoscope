@@ -11,21 +11,29 @@
             padding: 20px; 
             display: flex; 
             gap: 20px; 
+            overflow: hidden;
         }
         .ui-panel { 
             background-color: #ffffff; 
             padding: 15px; 
             border-radius: 8px; 
             box-shadow: 0 2px 5px rgba(0,0,0,0.1); 
-            width: 350px; 
+            width: 380px; 
+            position: relative;
+            max-height: calc(100vh - 40px);
+            overflow-y: auto;
+            flex-shrink: 0;
         }
-        .ui-panel h2 { margin-top: 0; }
-        .ui-panel div { 
+        .ui-header h2 { margin: 0 0 8px 0; }
+        
+        /* CORRECTED RULE: Only applies flexbox to specific rows with controls */
+        .section > div, .params-grid > div {
             margin-bottom: 12px; 
             display: flex; 
             justify-content: space-between; 
             align-items: center; 
         }
+
         .ui-panel label { 
             font-weight: bold; 
             white-space: nowrap; 
@@ -37,142 +45,136 @@
             border: 1px solid #ccc; 
             width: 80px; 
         }
-        .ui-panel input[type="color"] { 
-            padding: 2px; 
-            height: 30px; 
-        }
-        .ui-panel input[type="range"] { 
-            flex-grow: 1; 
-            width: auto; 
-        }
-        .ui-panel .button-group button { 
-            flex-grow: 1; 
-            width: auto; 
-        }
-        .ui-panel .button-group { gap: 10px; }
-        #kaleidoscope-container { 
-            width: 800px; 
-            height: 400px; 
-            border: 2px solid #ccc; 
-            box-shadow: 0 2px 5px rgba(0,0,0,0.2); 
-            position: relative; 
-            resize: both; 
-            overflow: hidden; 
-            touch-action: none; 
-        }
-        #kaleidoscope-canvas { 
-            display: block; 
-            width: 100%; 
-            height: 100%; 
-        }
+        .ui-panel input[type="color"] { padding: 2px; height: 30px; }
+        .ui-panel input[type="range"] { flex-grow: 1; width: auto; }
+        .ui-panel .button-group button, .ui-panel .button-group .button-like-label { flex-grow: 1; width: auto; }
+        .ui-panel .button-group { gap: 10px; display: flex; }
+        #kaleidoscope-container { flex-grow: 1; height: calc(100vh - 40px); border: 2px solid #ccc; box-shadow: 0 2px 5px rgba(0,0,0,0.2); position: relative; resize: both; overflow: hidden; touch-action: none; }
+        #kaleidoscope-canvas { display: block; width: 100%; height: 100%; }
+        
         #object-selection { 
+            display: flex; 
             flex-wrap: wrap; 
             gap: 5px 15px; 
         }
         #object-selection div { margin-bottom: 0; }
         #object-selection label { font-weight: normal; }
         #object-selection input { width: auto; }
+
+        details.section summary { list-style: none; cursor: pointer; font-weight: 700; margin: 8px 0; display: flex; align-items: center; gap: 6px; }
+        details.section summary::before { content: '▶'; }
+        details.section[open] summary::before { content: '▼'; }
+        details.section summary::-webkit-details-marker { display: none; }
+        .layout-params-body { max-height: 260px; overflow-y: auto; padding-right: 6px; position: relative; }
+        .params-grid { display: block; }
+        .tab-container { display: flex; flex-direction: column; gap: 12px; }
+        .tab-buttons { display: flex; flex-wrap: wrap; gap: 8px; position: sticky; top: 0; background-color: #ffffff; padding-bottom: 6px; z-index: 1; }
+        .tab-button { flex: 1 0 45%; padding: 6px 10px; border-radius: 4px; border: 1px solid #ccc; background-color: #f5f5f5; font-weight: 600; cursor: pointer; transition: background-color 0.2s ease, color 0.2s ease; }
+        .tab-button:hover { background-color: #e5e5e5; }
+        .tab-button.active { background-color: #0078d4; border-color: #0078d4; color: #ffffff; }
+        .tab-button.disabled { opacity: 0.55; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        .tab-content.disabled { opacity: 0.55; }
+        #toggleAutoButton.auto-off { background-color: #ffe7cc; border-color: #ffa726; color: #6d3b00; }
+        #generateButton.needs-update { box-shadow: 0 0 0 2px #ffa726 inset; }
+        .top-actions { display: flex; gap: 10px; margin: 6px 0 12px 0; }
+        .button-like-label { padding: 6px; border-radius: 4px; border: 1px solid #ccc; background-color: #f0f0f0; cursor: pointer; text-align: center; font-size: 13.333px; font-weight: normal !important; }
+        .button-like-label:hover { background-color: #e0e0e0; }
+
+        @media (max-width: 900px) {
+            body { flex-direction: column; overflow: auto; }
+            .ui-panel { width: auto; max-height: none; }
+            #kaleidoscope-container { width: 100%; height: 60vh; flex-grow: 0; }
+        }
     </style>
 </head>
 <body>
 
-    <div class="ui-panel">
-        <h2>Generation</h2>
-        <div>
-            <label for="reflectionsInput">Reflections:</label>
-            <input type="number" id="reflectionsInput" value="8" min="2" max="50">
+    <div class="ui-panel" id="uiPanel">
+        <div class="ui-header"><h2>Controls</h2></div>
+        <div class="top-actions">
+            <button id="generateButton">Regenerate</button>
+            <button id="toggleAutoButton">Auto Update: On</button>
+            <button id="collapseAllBtn">Collapse All</button>
         </div>
-        <div>
-            <label for="effectSelect">Layout:</label>
-            <select id="effectSelect" style="flex-grow: 1;">
-                <option value="static">Static</option>
-                <option value="spiral">Spiral</option>
-                <option value="tunnel">Tunnel</option>
-                <option value="zoom">Zoom</option>
-                <option value="sphere">Sphere</option>
-            </select>
-        </div>
-        <div>
-            <label for="bgColorPicker">Background:</label>
-            <input type="color" id="bgColorPicker" value="#101010">
-        </div>
-        
-        <div id="object-selection">
-            <div><input type="checkbox" class="shape-checkbox" value="sphere" checked><label>Sphere</label></div>
-            <div><input type="checkbox" class="shape-checkbox" value="box" checked><label>Box</label></div>
-            <div><input type="checkbox" class="shape-checkbox" value="cone" checked><label>Cone</label></div>
-            <div><input type="checkbox" class="shape-checkbox" value="cylinder" checked><label>Cylinder</label></div>
-            <div><input type="checkbox" class="shape-checkbox" value="torus" checked><label>Torus</label></div>
-            <div><input type="checkbox" class="shape-checkbox" value="tetrahedron" checked><label>Tetrahedron</label></div>
-            <div><input type="checkbox" class="shape-checkbox" value="octahedron" checked><label>Octahedron</label></div>
-            <div><input type="checkbox" class="shape-checkbox" value="icosahedron" checked><label>Icosahedron</label></div>
-            <div><input type="checkbox" class="shape-checkbox" value="torusKnot" checked><label>Torus Knot</label></div>
-        </div>
-
-        <div class="button-group">
-            <button id="generateButton">Generate Shapes</button>
-        </div>
-        <hr>
-        <h2>Text Mode</h2>
-        <div>
-            <label for="textInput">Message:</label>
-            <input type="text" id="textInput" value="3D" style="flex-grow: 1;">
-        </div>
-        <div>
-            <label for="fontSelect">Font:</label>
-            <select id="fontSelect" style="flex-grow: 1;">
-                <option value="helvetiker">Helvetiker</option>
-                <option value="optimer">Optimer</option>
-                <option value="gentilis">Gentilis</option>
-            </select>
-        </div>
-        <div class="button-group">
-            <button id="textGenerateButton">Generate Text</button>
-        </div>
-        <hr>
-        <h2>Stereo 3D Controls</h2>
-        <div>
-            <label for="eyeSepSlider">Eye Separation:</label>
-            <input type="range" id="eyeSepSlider" min="0" max="100" value="20">
-        </div>
-        <div>
-            <label for="focusSlider">Focal Distance:</label>
-            <input type="range" id="focusSlider" min="1" max="100" value="50">
-        </div>
-        <div>
-            <label for="fovSlider">Field of View:</label>
-            <input type="range" id="fovSlider" min="20" max="120" value="60">
-        </div>
-        <div class="button-group">
-            <button id="swapEyesButton">Cross-View</button>
-        </div>
-        <hr>
-        <h2>Playback & Sizing</h2>
-        <div class="button-group">
-            <button id="stopAutoRotateButton">Stop Auto-Rotate</button>
-            <button id="startAutoRotateButton">Start Auto-Rotate</button>
-            <button id="saveButton">Save as PNG</button>
-        </div>
-        <div>
-             <label for="sizeInput">View Size:</label>
-             <input type="number" id="sizeInput" value="400">
-             <button id="resizeButton">Set Size</button>
+        <div class="ui-content">
+            <details class="section" open>
+                <summary>Mode</summary>
+                <div><label for="modeSelect">Mode:</label><select id="modeSelect" style="flex-grow: 1;"><option value="objects">Objects</option><option value="text">Text</option></select></div>
+            </details>
+            <details class="section" open>
+                <summary>Generation</summary>
+                <div><label for="reflectionsInput">Reflections:</label><input type="number" id="reflectionsInput" value="8" min="2" max="50"></div>
+                <div><label for="reflectionsEnabled">Enable Reflections</label><input type="checkbox" id="reflectionsEnabled" checked></div>
+                <div><label for="objectCountInput">Objects:</label><input type="number" id="objectCountInput" value="30" min="1" max="200"></div>
+                <div><label for="effectSelect">Layout:</label><select id="effectSelect" style="flex-grow: 1;"><option value="static">Static</option><option value="spiral">Spiral</option><option value="tunnel">Tunnel</option><option value="zoom">Zoom</option><option value="sphere">Sphere</option></select></div>
+                <div><label for="bgColorPicker">Background:</label><input type="color" id="bgColorPicker" value="#101010"></div>
+                <details class="section" id="layoutParamsSection"><summary>Layout Parameters</summary><div class="layout-params-body"><div id="params-spiral" class="params-grid" data-effect="spiral"><div><label for="spiralArms">Arms</label><input type="number" id="spiralArms" min="1" max="12" value="3"></div><div><label for="spiralTurns">Turns</label><input type="number" id="spiralTurns" min="1" max="10" step="0.1" value="3"></div><div><label for="spiralRadiusStart">Start Radius</label><input type="number" id="spiralRadiusStart" min="0" max="10" step="0.1" value="0.5"></div><div><label for="spiralRadiusEnd">End Radius</label><input type="number" id="spiralRadiusEnd" min="0.5" max="20" step="0.1" value="7"></div><div><label for="spiralDepth">Depth</label><input type="number" id="spiralDepth" min="0" max="50" step="0.1" value="10"></div><div><label for="spiralJitter">Jitter</label><input type="number" id="spiralJitter" min="0" max="2" step="0.05" value="0.3"></div></div><div id="params-tunnel" class="params-grid" data-effect="tunnel" style="display:none;"><div><label for="tunnelRadiusMin">Min Radius</label><input type="number" id="tunnelRadiusMin" min="0" max="10" step="0.1" value="1"></div><div><label for="tunnelRadiusMax">Max Radius</label><input type="number" id="tunnelRadiusMax" min="0.5" max="20" step="0.1" value="5"></div><div><label for="tunnelDepth">Depth</label><input type="number" id="tunnelDepth" min="0" max="50" step="0.1" value="20"></div></div><div id="params-zoom" class="params-grid" data-effect="zoom" style="display:none;"><div><label for="zoomStep">Depth Step</label><input type="number" id="zoomStep" min="0" max="5" step="0.05" value="0.8"></div></div><div id="params-sphere" class="params-grid" data-effect="sphere" style="display:none;"><div><label for="sphereRadius">Sphere Radius</label><input type="number" id="sphereRadius" min="0.5" max="20" step="0.1" value="5"></div></div><div id="params-static" class="params-grid" data-effect="static" style="display:none;"><div><label for="staticSpread">Spread</label><input type="number" id="staticSpread" min="1" max="20" step="0.5" value="10"></div></div></div></details>
+                <details class="section" id="perStepSection"><summary>Per-Step Transform</summary><div class="layout-params-body"><div class="params-grid"><div><label for="stepRotateX">Rotate X (deg)</label><input type="number" id="stepRotateX" step="1" value="0"></div><div><label for="stepRotateY">Rotate Y (deg)</label><input type="number" id="stepRotateY" step="1" value="0"></div><div><label for="stepRotateZ">Rotate Z (deg)</label><input type="number" id="stepRotateZ" step="1" value="0"></div><div><label for="stepScale">Scale Factor</label><input type="number" id="stepScale" step="0.01" value="1"></div></div></div></details>
+                <div id="object-selection"><div><input type="checkbox" class="shape-checkbox" value="sphere" checked><label>Sphere</label></div><div><input type="checkbox" class="shape-checkbox" value="box" checked><label>Box</label></div><div><input type="checkbox" class="shape-checkbox" value="cone" checked><label>Cone</label></div><div><input type="checkbox" class="shape-checkbox" value="cylinder" checked><label>Cylinder</label></div><div><input type="checkbox" class="shape-checkbox" value="torus" checked><label>Torus</label></div><div><input type="checkbox" class="shape-checkbox" value="tetrahedron" checked><label>Tetrahedron</label></div><div><input type="checkbox" class="shape-checkbox" value="octahedron" checked><label>Octahedron</label></div><div><input type="checkbox" class="shape-checkbox" value="icosahedron" checked><label>Icosahedron</label></div><div><input type="checkbox" class="shape-checkbox" value="torusKnot" checked><label>Torus Knot</label></div></div>
+            </details>
+            <details class="section">
+                <summary>Object Parameters</summary>
+                <div class="layout-params-body">
+                    <div class="tab-container">
+                        <div class="tab-buttons" id="objectTabButtons">
+                            <button class="tab-button" data-tab="sphere">Sphere</button>
+                            <button class="tab-button" data-tab="box">Box</button>
+                            <button class="tab-button" data-tab="cone">Cone</button>
+                            <button class="tab-button" data-tab="cylinder">Cylinder</button>
+                            <button class="tab-button" data-tab="torus">Torus</button>
+                        </div>
+                        <div class="tab-content" data-tab="sphere">
+                            <div id="params-sphere-geom" class="params-grid">
+                                <label>-- Sphere --</label>
+                                <div><label for="sphereRadiusGeom">Radius</label><input type="range" id="sphereRadiusGeom" min="0.1" max="2" step="0.05" value="0.5"></div>
+                            </div>
+                        </div>
+                        <div class="tab-content" data-tab="box">
+                            <div id="params-box-geom" class="params-grid">
+                                <label>-- Box --</label>
+                                <div><label for="boxWidth">Width</label><input type="range" id="boxWidth" min="0.1" max="2" step="0.05" value="0.8"></div>
+                                <div><label for="boxHeight">Height</label><input type="range" id="boxHeight" min="0.1" max="2" step="0.05" value="0.8"></div>
+                                <div><label for="boxDepth">Depth</label><input type="range" id="boxDepth" min="0.1" max="2" step="0.05" value="0.8"></div>
+                            </div>
+                        </div>
+                        <div class="tab-content" data-tab="cone">
+                            <div id="params-cone-geom" class="params-grid">
+                                <label>-- Cone --</label>
+                                <div><label for="coneRadius">Radius</label><input type="range" id="coneRadius" min="0.1" max="2" step="0.05" value="0.5"></div>
+                                <div><label for="coneHeight">Height</label><input type="range" id="coneHeight" min="0.1" max="3" step="0.05" value="1.0"></div>
+                            </div>
+                        </div>
+                        <div class="tab-content" data-tab="cylinder">
+                            <div id="params-cylinder-geom" class="params-grid">
+                                <label>-- Cylinder --</label>
+                                <div><label for="cylinderRadiusTop">Top Radius</label><input type="range" id="cylinderRadiusTop" min="0.1" max="2" step="0.05" value="0.5"></div>
+                                <div><label for="cylinderRadiusBottom">Bottom Radius</label><input type="range" id="cylinderRadiusBottom" min="0.1" max="2" step="0.05" value="0.5"></div>
+                                <div><label for="cylinderHeight">Height</label><input type="range" id="cylinderHeight" min="0.1" max="3" step="0.05" value="1.5"></div>
+                            </div>
+                        </div>
+                        <div class="tab-content" data-tab="torus">
+                            <div id="params-torus-geom" class="params-grid">
+                                <label>-- Torus --</label>
+                                <div><label for="torusRadius">Radius</label><input type="range" id="torusRadius" min="0.1" max="2" step="0.05" value="0.8"></div>
+                                <div><label for="torusTube">Tube</label><input type="range" id="torusTube" min="0.05" max="1" step="0.01" value="0.2"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </details>
+            <details class="section"><summary>Text Mode</summary><div><label for="textInput">Message:</label><input type="text" id="textInput" value="3D" style="flex-grow: 1;"></div><div><label for="fontSelect">Font:</label><select id="fontSelect" style="flex-grow: 1;"><option value="helvetiker">Helvetiker</option><option value="optimer">Optimer</option><option value="gentilis">Gentilis</option></select></div></details>
+            <details class="section"><summary>Materials</summary><div><label for="reflectCheckbox">Reflective:</label><input type="checkbox" id="reflectCheckbox"></div><div><label for="transparentCheckbox">Transparent:</label><input type="checkbox" id="transparentCheckbox"></div><div><label for="opacitySlider">Opacity:</label><input type="range" id="opacitySlider" min="0" max="1" step="0.01" value="1"></div></details>
+            <details id="stereoSection" class="section"><summary>Stereo 3D</summary><div><label for="eyeSepSlider">Eye Separation:</label><input type="range" id="eyeSepSlider" min="0" max="100" value="20"></div><div><label for="focusSlider">Focal Distance:</label><input type="range" id="focusSlider" min="1" max="100" value="50"></div><div><label for="fovSlider">Field of View:</label><input type="range" id="fovSlider" min="20" max="120" value="60"></div><div class="button-group"><button id="swapEyesButton">Cross-View</button></div></details>
+            <details class="section"><summary>Playback & Export</summary><div><label for="zoomEnable">Enable Zoom</label><input type="checkbox" id="zoomEnable" checked></div><div><label for="panEnable">Enable Pan</label><input type="checkbox" id="panEnable" checked></div><div><label for="animateCheckbox">Animate:</label><input type="checkbox" id="animateCheckbox" checked></div><div><label for="speedSlider">Speed:</label><input type="range" id="speedSlider" min="0" max="5" step="0.01" value="1"></div><div class="button-group"><button id="saveButton">Save PNG</button></div><div class="button-group"><button id="saveSettingsButton">Save Settings</button><label for="loadSettingsInput" class="button-like-label">Load Settings</label><input type="file" id="loadSettingsInput" accept=".json" style="display: none;"></div><div><label for="sizeInput">View Size:</label><input type="number" id="sizeInput" value="400"><button id="resizeButton">Set Size</button></div></details>
         </div>
     </div>
-    
-    <div id="kaleidoscope-container">
-        <canvas id="kaleidoscope-canvas"></canvas>
-    </div>
-
-    <script type="importmap">
-    {
-        "imports": {
-            "three": "https://unpkg.com/three@0.164.1/build/three.module.js",
-            "three/addons/": "https://unpkg.com/three@0.164.1/examples/jsm/"
-        }
-    }
-    </script>
+    <div id="kaleidoscope-container"><canvas id="kaleidoscope-canvas"></canvas></div>
+    <script type="importmap">{ "imports": { "three": "https://unpkg.com/three@0.164.1/build/three.module.js", "three/addons/": "https://unpkg.com/three@0.164.1/examples/jsm/" } }</script>
     <script type="module" src="script.js"></script>
-
 </body>
 </html>
+
+
+
