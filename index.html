@@ -5,31 +5,100 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>3D Stereo Kaleidoscope Creator</title>
     <style>
-        body { 
-            font-family: sans-serif; 
-            background-color: #f0f0f0; 
-            padding: 20px; 
-            display: flex; 
-            gap: 20px; 
-            overflow: hidden;
+        body {
+            font-family: sans-serif;
+            background-color: #f0f0f0;
+            margin: 0;
+            min-height: 100vh;
+            overflow-x: hidden;
         }
-        .ui-panel { 
-            background-color: #ffffff; 
-            padding: 15px; 
-            border-radius: 8px; 
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1); 
-            width: 380px; 
+        .app-layout {
+            --panel-width: 360px;
+            display: grid;
+            grid-template-columns: var(--panel-width) minmax(0, 1fr);
+            gap: 20px;
+            padding: 20px;
+            box-sizing: border-box;
+            min-height: 100vh;
+            width: 100%;
+        }
+        .ui-panel {
+            background-color: #ffffff;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            max-width: var(--panel-width);
+            width: 100%;
             position: relative;
             max-height: calc(100vh - 40px);
             overflow-y: auto;
-            flex-shrink: 0;
         }
-        .ui-header h2 { margin: 0 0 8px 0; }
+        .ui-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 8px;
+        }
+        .ui-header h2 { margin: 0; }
+        .panel-collapse-btn {
+            border: none;
+            background-color: transparent;
+            color: #0078d4;
+            font-weight: 600;
+            cursor: pointer;
+            padding: 4px 8px;
+            border-radius: 4px;
+            transition: background-color 0.2s ease, color 0.2s ease;
+        }
+        .panel-collapse-btn:hover {
+            background-color: rgba(0, 120, 212, 0.12);
+        }
+        .panel-collapse-btn:focus-visible {
+            outline: 2px solid #005a9e;
+            outline-offset: 2px;
+        }
+        #panelToggle {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1100;
+            display: none;
+            align-items: center;
+            gap: 6px;
+            background-color: #0078d4;
+            color: #ffffff;
+            border: none;
+            border-radius: 999px;
+            padding: 8px 14px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+            font-weight: 600;
+            cursor: pointer;
+        }
+        #panelToggle:hover {
+            background-color: #005a9e;
+        }
+        #panelToggle:focus-visible {
+            outline: 2px solid #005a9e;
+            outline-offset: 2px;
+        }
+        body.panel-collapsed #panelToggle {
+            display: inline-flex;
+        }
+        body.panel-collapsed .app-layout {
+            grid-template-columns: minmax(0, 1fr);
+        }
+        body.panel-collapsed #viewportScroll {
+            grid-column: 1 / -1;
+        }
+        body.panel-collapsed .ui-panel {
+            display: none;
+        }
         
         /* CORRECTED RULE: Only applies flexbox to specific rows with controls */
         .section > div, .params-grid > div {
-            margin-bottom: 12px; 
-            display: flex; 
+            margin-bottom: 12px;
+            display: flex;
             justify-content: space-between; 
             align-items: center; 
         }
@@ -49,17 +118,26 @@
         .ui-panel input[type="range"] { flex-grow: 1; width: auto; }
         .ui-panel .button-group button, .ui-panel .button-group .button-like-label { flex-grow: 1; width: auto; }
         .ui-panel .button-group { gap: 10px; display: flex; }
-        #viewportScroll { flex: 1; max-height: calc(100vh - 40px); overflow: auto; background-color: #ffffff; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.2); padding: 12px; }
+        #viewportScroll {
+            flex: 1;
+            max-height: calc(100vh - 40px);
+            overflow: auto;
+            background-color: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            padding: 12px;
+            min-width: 0;
+        }
         #kaleidoscope-container { display: inline-block; border: 2px solid #ccc; border-radius: 6px; box-shadow: 0 2px 5px rgba(0,0,0,0.2); position: relative; overflow: hidden; touch-action: none; }
         #kaleidoscope-canvas { display: block; width: 100%; height: 100%; }
         .preview-scale-group { display: flex; align-items: center; gap: 8px; width: 100%; }
         .preview-scale-group input[type="range"] { flex: 1; width: auto; }
         .preview-scale-group span { min-width: 48px; text-align: right; font-weight: normal; }
         .preview-scale-row label { margin-right: 10px; }
-        
-        #object-selection { 
-            display: flex; 
-            flex-wrap: wrap; 
+
+        #object-selection {
+            display: flex;
+            flex-wrap: wrap;
             gap: 5px 15px; 
         }
         #object-selection div { margin-bottom: 0; }
@@ -83,28 +161,67 @@
         .tab-content.disabled { opacity: 0.55; }
         #toggleAutoButton.auto-off { background-color: #ffe7cc; border-color: #ffa726; color: #6d3b00; }
         #generateButton.needs-update { box-shadow: 0 0 0 2px #ffa726 inset; }
-        .top-actions { display: flex; gap: 10px; margin: 6px 0 12px 0; }
+        .top-actions { display: flex; gap: 10px; margin: 6px 0 12px 0; flex-wrap: wrap; }
         .button-like-label { padding: 6px; border-radius: 4px; border: 1px solid #ccc; background-color: #f0f0f0; cursor: pointer; text-align: center; font-size: 13.333px; font-weight: normal !important; }
         .button-like-label:hover { background-color: #e0e0e0; }
 
         @media (max-width: 900px) {
-            body { flex-direction: column; overflow: auto; }
-            .ui-panel { width: auto; max-height: none; }
-            #viewportScroll { width: 100%; max-height: none; }
-            #kaleidoscope-container { width: 100%; height: 60vh; }
+            .app-layout {
+                grid-template-columns: minmax(0, 1fr);
+                padding: 16px;
+                gap: 16px;
+            }
+            .ui-panel {
+                display: block;
+                position: fixed;
+                top: 0;
+                left: 0;
+                bottom: 0;
+                width: min(var(--panel-width), 100vw);
+                max-width: 100vw;
+                max-height: 100vh;
+                border-radius: 0 12px 12px 0;
+                box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+                transform: translateX(0);
+                transition: transform 0.3s ease;
+                z-index: 1000;
+            }
+            body.panel-collapsed .ui-panel {
+                display: block;
+                transform: translateX(calc(-100% - 16px));
+                pointer-events: none;
+            }
+            #viewportScroll {
+                max-height: none;
+                min-height: calc(100vh - 32px);
+                padding: 16px;
+            }
+            #kaleidoscope-container {
+                width: 100%;
+                height: 60vh;
+            }
+            #panelToggle {
+                top: 16px;
+                right: 16px;
+            }
         }
     </style>
 </head>
 <body>
 
-    <div class="ui-panel" id="uiPanel">
-        <div class="ui-header"><h2>Controls</h2></div>
-        <div class="top-actions">
-            <button id="generateButton">Regenerate</button>
-            <button id="toggleAutoButton">Auto Update: On</button>
-            <button id="collapseAllBtn">Collapse All</button>
-        </div>
-        <div class="ui-content">
+    <button type="button" id="panelToggle" aria-controls="uiPanel" aria-expanded="true">Show Controls</button>
+    <div class="app-layout">
+        <div class="ui-panel" id="uiPanel">
+            <div class="ui-header">
+                <h2>Controls</h2>
+                <button type="button" id="collapsePanelButton" class="panel-collapse-btn" aria-label="Hide controls">Hide</button>
+            </div>
+            <div class="top-actions">
+                <button id="generateButton">Regenerate</button>
+                <button id="toggleAutoButton">Auto Update: On</button>
+                <button id="collapseAllBtn">Collapse All</button>
+            </div>
+            <div class="ui-content">
             <details class="section" open>
                 <summary>Mode</summary>
                 <div><label for="modeSelect">Mode:</label><select id="modeSelect" style="flex-grow: 1;"><option value="objects">Objects</option><option value="text">Text</option></select></div>
@@ -177,11 +294,12 @@
 
                 <div class="preview-scale-row"><label for="previewScaleInput">Preview Scale:</label><div class="preview-scale-group"><input type="range" id="previewScaleInput" min="0.25" max="1" step="0.05" value="1"><span id="previewScaleValue">100%</span></div></div></details>
         </div>
-    </div>
-    <div id="viewportScroll">
+        </div>
+        <div id="viewportScroll">
 
-        <div id="kaleidoscope-container"><canvas id="kaleidoscope-canvas"></canvas></div>
+            <div id="kaleidoscope-container"><canvas id="kaleidoscope-canvas"></canvas></div>
 
+        </div>
     </div>
 
     <script type="importmap">{ "imports": { "three": "https://unpkg.com/three@0.164.1/build/three.module.js", "three/addons/": "https://unpkg.com/three@0.164.1/examples/jsm/" } }</script>
