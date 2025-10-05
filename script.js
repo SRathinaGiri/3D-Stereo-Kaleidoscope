@@ -65,6 +65,9 @@ const torusTube = document.getElementById('torusTube');
 const saveSettingsButton = document.getElementById('saveSettingsButton');
 const loadSettingsInput = document.getElementById('loadSettingsInput');
 const objectTabButtonsContainer = document.getElementById('objectTabButtons');
+const uiPanel = document.getElementById('uiPanel');
+const collapsePanelButton = document.getElementById('collapsePanelButton');
+const panelToggleButton = document.getElementById('panelToggle');
 // --- Global State & Constants ---
 let rotationSpeed = 1.0;
 let isAnimating = false;
@@ -81,6 +84,50 @@ let kaleidoscopeGroup = new THREE.Group();
 let roomEnvironmentTexture = null;
 let font = null;
 const fontUrls = { helvetiker: 'https://unpkg.com/three@0.164.1/examples/fonts/helvetiker_regular.typeface.json', optimer: 'https://unpkg.com/three@0.164.1/examples/fonts/optimer_regular.typeface.json', gentilis: 'https://unpkg.com/three@0.164.1/examples/fonts/gentilis_regular.typeface.json' };
+
+// --- Responsive Panel Controls ---
+const smallScreenQuery = window.matchMedia('(max-width: 900px)');
+let panelUserOverride = false;
+
+function setPanelCollapsed(collapsed, options = {}) {
+    if (!uiPanel) return;
+    const { fromUser = false } = options;
+    document.body.classList.toggle('panel-collapsed', collapsed);
+    if (panelToggleButton) {
+        panelToggleButton.setAttribute('aria-expanded', (!collapsed).toString());
+        panelToggleButton.textContent = collapsed ? 'Show Controls' : 'Hide Controls';
+    }
+    if (fromUser) {
+        panelUserOverride = smallScreenQuery.matches;
+    }
+}
+
+function syncPanelWithViewport(event) {
+    const matches = typeof event.matches === 'boolean' ? event.matches : smallScreenQuery.matches;
+    if (!matches) {
+        panelUserOverride = false;
+        setPanelCollapsed(false);
+    } else if (!panelUserOverride) {
+        setPanelCollapsed(true);
+    }
+}
+
+syncPanelWithViewport(smallScreenQuery);
+smallScreenQuery.addEventListener('change', syncPanelWithViewport);
+
+if (panelToggleButton) {
+    panelToggleButton.addEventListener('click', () => {
+        const collapsed = document.body.classList.contains('panel-collapsed');
+        setPanelCollapsed(!collapsed, { fromUser: true });
+    });
+}
+
+if (collapsePanelButton) {
+    collapsePanelButton.addEventListener('click', () => {
+        setPanelCollapsed(true, { fromUser: true });
+        panelToggleButton?.focus();
+    });
+}
 // --- Core Three.js Setup ---
 const renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, preserveDrawingBuffer: true });
 const scene = new THREE.Scene();
